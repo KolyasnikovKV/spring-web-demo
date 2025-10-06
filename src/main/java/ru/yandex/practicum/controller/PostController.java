@@ -24,7 +24,6 @@ public class PostController {
     private final PostService postService;
     private final CommentService commentService;
 
-    // GET "posts" - список постов на странице ленты постов
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public PostPage getPosts(Model model,
                            @RequestParam(value = "search", required = false) String search,
@@ -34,57 +33,48 @@ public class PostController {
         return postPage;
     }
 
-    // GET "/posts/{id}" - страница с постом
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Post getPostById(@PathVariable("id") long id) {
         return postService.getById(id);
     }
 
-    // POST "/posts" - добавление поста
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Post addPost(@RequestBody Post newPost) {
         return postService.create(newPost);
     }
 
-    // POST "/posts/{id}/like" - увеличение числа лайков поста
     @PostMapping("/{id}/likes")
     public Integer likePost(@PathVariable("id") long id) {
         return postService.like(id);
     }
 
-    // POST "/posts/{id}" - редактирование поста
     @PutMapping(value ="/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Post editPost(@PathVariable("id") long id,
                          @RequestBody Post newPost) {
         return postService.update(id, newPost);
     }
 
-    // POST "/posts/{id}/delete" - эндпоинт удаления поста
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Void> deletePost(@PathVariable("id") long id) {
         postService.delete(id);
         return ResponseEntity.ok().build();
     }
 
-    // POST "/posts/{id}/comments" - эндпоинт получения комментариев к посту
-    @GetMapping(value = "/{id}/comments", produces = MediaType.APPLICATION_JSON_VALUE)
+     @GetMapping(value = "/{id}/comments", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Comment> getComments(@PathVariable("id") long postId) {
         return commentService.get(postId);
     }
 
-    // POST "/posts/{id}/comments" - эндпоинт добавления комментария к посту
     @PostMapping(value = "/{id}/comments", produces = MediaType.APPLICATION_JSON_VALUE)
     public Comment addComment(@PathVariable("id") long postId, @RequestBody Comment newComment) {
         return commentService.add(postId, newComment);
     }
 
-    // PUT "/posts/{id}/comments/{commentId}" - эндпоинт редактирования комментария
     @PutMapping(value = "/{id}/comments/{commentId}")
     public Comment editComment(@PathVariable("id") long postId, @RequestBody Comment editComment) {
         return commentService.edit(postId, editComment);
     }
 
-    // POST "/posts/{id}/comments/{commentId}/delete" - эндпоинт удаления комментария
     @DeleteMapping("/{id}/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable("id") long postId,
                               @PathVariable("commentId") long commentId) {
