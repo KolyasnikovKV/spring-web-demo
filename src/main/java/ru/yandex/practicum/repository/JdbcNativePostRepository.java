@@ -12,9 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.validation.Validator;
 import ru.yandex.practicum.model.Post;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,6 +42,9 @@ public class JdbcNativePostRepository implements PostRepository {
         StringBuilder tagsCondition = new StringBuilder("true");
         StringBuilder titleCondition = new StringBuilder("true");
 
+        List<Object> params = new ArrayList<>();
+        List<Integer> types = new ArrayList<>();
+
         String sqlSummary = "SELECT p.id, p.title, p.image, p.text, p.likes_count, p.comments_count, p.tags FROM posts p " +
                 "WHERE %TAGS_CONDITION% AND %TITLE_CONDITION% ORDER BY id LIMIT ? OFFSET ?";
 
@@ -55,27 +56,38 @@ public class JdbcNativePostRepository implements PostRepository {
             tagsCondition.setLength(0);
             tagsCondition.append(mapCondition.get(TAGS_CONDITION).stream()
                     .map(value -> value.substring(1))
-                    .map(value -> " p.tags like '%" + value + "%' ")
+                    .map(value -> " p.tags like ? ")
                     .collect(Collectors.joining(" AND ")));
+
+            mapCondition.get(TAGS_CONDITION).stream()
+                    .map(value -> value.substring(1))
+                    .map(value -> "%" + value + "%")
+                    .forEach(value -> {params.add(value); types.add(Types.VARCHAR);});
+
         }
 
         if (mapCondition.containsKey(TITLE_CONDITION)){
             titleCondition.setLength(0);
-            titleCondition.append(" p.title like '%");
-            titleCondition.append(String.join(SPACE, mapCondition.get(TITLE_CONDITION)));
-            titleCondition.append("%' ");
+            titleCondition.append(" p.title like ? ");
+            params.add("%" + String.join(SPACE, mapCondition.get(TITLE_CONDITION)) + "%");
+            types.add(Types.VARCHAR);
         }
 
         sqlSummary = sqlSummary.replace(TAGS_CONDITION, tagsCondition.toString());
         sqlSummary = sqlSummary.replace(TITLE_CONDITION, titleCondition.toString());
 
-        return jdbcTemplate.query(sqlSummary, rs -> {
+        params.add(amount);
+        params.add(offset);
+        types.add(Types.INTEGER);
+        types.add(Types.INTEGER);
+
+        return jdbcTemplate.query(sqlSummary, params.toArray(), types.stream().mapToInt(i->i).toArray(), rs -> {
             List<Post> posts = new ArrayList<>();
             while (rs.next()) {
                 posts.add(mapToPost(rs));
             }
             return posts;
-        }, amount, offset);
+        });
     }
 
     @Override
@@ -149,6 +161,7 @@ public class JdbcNativePostRepository implements PostRepository {
 
         @Override
     public void deleteById(long id) {
+        jdbcTemplate.update("DELETE FROM comments WHERE post_id = ?", id);
         jdbcTemplate.update("DELETE FROM posts WHERE id = ?", id);
     }
 
