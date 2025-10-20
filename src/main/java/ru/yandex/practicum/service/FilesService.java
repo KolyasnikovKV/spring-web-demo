@@ -40,6 +40,18 @@ public class FilesService {
 
     }
     private String upload(MultipartFile file) {
+        String contentType = file.getContentType();
+
+        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            throw new RuntimeException("Ошибка формата файла");
+        }
+
+        String originalFileName = file.getOriginalFilename();
+        if (originalFileName == null ||
+                (!originalFileName.toLowerCase().endsWith(".jpg") && !originalFileName.toLowerCase().endsWith(".png"))) {
+            throw new RuntimeException("Ошибка формата файла");
+        }
+
         try {
             Path uploadDir = Paths.get(paths.getImagePathStr());
             if (!Files.exists(uploadDir)) {

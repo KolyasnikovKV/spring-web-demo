@@ -10,9 +10,9 @@ import ru.yandex.practicum.exception.DataNotFoundException;
 @Slf4j
 public class ServiceControllerAdvice {
 
-    @ExceptionHandler(DataNotFoundException.class)
-    public ResponseEntity<String> handleException(DataNotFoundException e) {
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleException(RuntimeException e) {
         log.info(e.getMessage());
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.badRequest().build();
     }
 }
